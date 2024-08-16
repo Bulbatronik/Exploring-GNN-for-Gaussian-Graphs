@@ -15,7 +15,7 @@ The data used for simulation are two synthetic datasets simulated using [`Gaussi
 In parallel to the dataset, papers/articles/books on the following topics were provided:
 
 - A review on the use of Graph Neural Networks for Graph Classification.
-- Basic implementations of GNN for Graph Classification in PyTorch: GitHub - qbxlvnf11/graph-neural-networks-for-graph-classification.
+- Basic implementations of GNN for Graph Classification in PyTorch: [LINK](https://github.com/qbxlvnf11/graph-neural-networks-for-graph-classification).
 - A paper addressing class imbalance.
 - A paper discussing the use of attention to enhance interpretability.
  
