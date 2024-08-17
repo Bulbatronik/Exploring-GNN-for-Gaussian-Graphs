@@ -23,14 +23,10 @@ class MLP(torch.nn.Module):
         
         # To resolve device issues
         self.linear = ModuleList(self.layers)
-        self.output = Linear(dim_h, 1)
         
-    def __repr__(self):
-        layers = ''
-        for i in range(self.num_layers):
-            layers += str(self.layers[i]) + '\n'
-        layers += str(self.output) + '\n'
-        return layers
+        # Classifier
+        self.classifier = Linear(dim_h, dim_h)
+        self.output = Linear(dim_h, 1)
 
     def forward(self, x):
         for i in range(self.num_layers):
@@ -39,6 +35,11 @@ class MLP(torch.nn.Module):
             if self.dropout:
                 x = F.dropout(x, p=0.5, training=self.training)
         
+        # Classifier
+        x = self.classifier(x)
+        if self.dropout:
+                x = F.dropout(x, p=0.5, training=self.training)
+        x = self.classifier(x)
         x = self.output(x)
         
         return torch.sigmoid(x)
@@ -78,3 +79,11 @@ class MLP(torch.nn.Module):
             loss += criterion(out, y_batch) / len(loader)
             acc += accuracy(out>=0.5, y_batch) / len(loader)
         return loss, acc
+    
+    #def __repr__(self):
+    #    layers = ''
+    #    for i in range(self.num_layers):
+    ##        layers += str(self.layers[i]) + '\n'
+     #   layers += str(self.classifier) + '\n'
+     #   layers += str(self.output) + '\n'
+     #   return layers

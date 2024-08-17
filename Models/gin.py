@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Sequential, BatchNorm1d, ReLU, Dropout, Sigmoid
+from torch.nn import Linear, Sequential, BatchNorm1d, ReLU, ModuleList
 
 from torch_geometric.data import InMemoryDataset, Data
 from torch_geometric.loader import DataLoader
@@ -30,79 +30,47 @@ from scipy.sparse import coo_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-class GIN(torch.nn.Module):
+from .base_gnn import BaseModel
+
+class GIN(BaseModel):
     """GIN"""
-    def __init__(self, dim_in, dim_h):
-        super(GIN, self).__init__()
-        self.conv1 = GINConv(
+    def __init__(self, dim_in, dim_h, num_layers, dropout=False):
+        super().__init__(num_layers, dropout)
+      
+        for i in range(self.num_layers):
+            if i == 0:
+                self.layers.append(GINConv(
             Sequential(Linear(dim_in, dim_h),
                        BatchNorm1d(dim_h), ReLU(),
-                       Linear(dim_h, dim_h), ReLU()))
-        self.conv2 = GINConv(
+                       Linear(dim_h, dim_h), ReLU())))
+            else:
+                self.layers.append(GINConv(
             Sequential(Linear(dim_h, dim_h), BatchNorm1d(dim_h), ReLU(),
-                       Linear(dim_h, dim_h), ReLU()))
-        #self.conv3 = GINConv(
-        #    Sequential(Linear(dim_h, dim_h), BatchNorm1d(dim_h), ReLU(),
-        #               Linear(dim_h, dim_h), ReLU()))
+                       Linear(dim_h, dim_h), ReLU())))
+        self.layers = ModuleList(self.layers)
         
-        self.lin1 = Linear(dim_h*2, dim_h*2)#*3
-        self.lin2 = Linear(dim_h*2, 1)
+        self.classifier = Linear(self.num_layers*dim_h, self.num_layers*dim_h)
+        self.output = Linear(self.num_layers*dim_h, 1)
 
     def forward(self, x, edge_index, edge_weight, batch):
         # Node embeddings 
-        h1 = self.conv1(x, edge_index)
-        h2 = self.conv2(h1, edge_index)
-        #h3 = self.conv2(h2, edge_index)
+        h = []
+        for i in range(self.num_layers):
+            x = self.layers[i](x, edge_index) # edge_weight is not supported
+            h.append(x)
         
         # Graph-level readout
-        h1 = global_add_pool(h1, batch)
-        h2 = global_add_pool(h2, batch)
-        #h3 = global_add_pool(h3, batch)
-
+        for i in range(self.num_layers):
+            h[i] = global_mean_pool(h[i], batch)
+        
         # Concatenate graph embeddings
-        h = torch.cat((h1, h2), dim=1)
+        x = torch.cat(h, dim=1)
         
         # Classifier
-        h = self.lin1(h)
-        h = h.relu()
-        h = F.dropout(h, p=0.5, training=self.training)
-        h = self.lin2(h)
+        x = self.classifier(x)
+        if self.dropout:
+                x = F.dropout(x, p=0.5, training=self.training)
+        x = self.classifier(x)
+        x = self.output(x)
         
-        return torch.sigmoid(h)
-
-    def fit(self, train_loader, val_loader, epochs, verbose=False):
-        criterion = torch.nn.BCELoss()
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.0001) # weight_decay=5e-4)
-
-        self.train()
-        for epoch in range(epochs+1): 
-            train_loss, train_acc = 0.0, 0.0
-            
-            # Train on batches
-            for data in train_loader:
-                optimizer.zero_grad()
-                out_train = self(data.x, data.edge_index, data.edge_weight, data.batch).view(-1)
-                loss = criterion(out_train, data.y)
-                
-                train_loss += loss / len(train_loader)
-                train_acc += accuracy(out_train>=0.5, data.y) / len(train_loader)
-                
-                loss.backward()
-                optimizer.step()
-
-            if(epoch % 20 == 0) and verbose:
-                val_loss, val_acc = self.test(val_loader)
-                print(f'Epoch {epoch:>3} | Train Loss: {train_loss:.3f} | Train Acc:'
-                    f' {train_acc*100:>5.2f}% | Val Loss: {val_loss:.2f} | '
-                    f'Val Acc: {val_acc*100:.2f}%')
-
-    @torch.no_grad()      
-    def test(self, loader):
-        criterion = torch.nn.BCELoss()
-        self.eval()
-        loss, acc = 0.0, 0.0
-        for data in loader:
-            out = self(data.x, data.edge_index, data.edge_weight, data.batch).view(-1)
-            loss += criterion(out, data.y) / len(loader)
-            acc += accuracy(out>=0.5, data.y) / len(loader)
-        return loss, acc
+        return torch.sigmoid(x)
