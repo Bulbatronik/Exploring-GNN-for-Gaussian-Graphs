@@ -1,25 +1,16 @@
 import torch
-
+from torch_geometric.nn import global_mean_pool, global_add_pool, global_max_pool
 from .utils import accuracy
 
 class BaseModel(torch.nn.Module):
     """Multilayer Perceptron"""
-    def __init__(self, num_layers, dropout):
+    def __init__(self, num_layers, dropout, pool_type):
         super().__init__()
         
         self.num_layers = num_layers
         self.layers = []
         self.dropout = dropout
-        #self.linear1 = Linear(dim_in, dim_h)
-        #self.linear2 = Linear(dim_h, 1)
-
-    def forward(self, x, edge_index, edge_weight=None, batch=None):
-        pass
-        #h = self.linear1(x)
-        #h = torch.relu(h)
-        #h = F.dropout(h, p=0.5, training=self.training)
-        #h = self.linear2(h)
-        #return torch.sigmoid(h)
+        self.pool_type = pool_type
 
     def fit(self, train_loader, val_loader, epochs, verbose=False):
         criterion = torch.nn.BCELoss()
@@ -58,12 +49,23 @@ class BaseModel(torch.nn.Module):
             acc += accuracy(out>=0.5, data.y) / len(loader)
         return loss, acc
     
-    
+
+    def pool(self, x, batch):
+        if self.pool_type == 'add':
+            return global_add_pool(x, batch)
+        elif self.pool_type == 'mean':
+            return global_mean_pool(x, batch)
+        elif self.pool_type == 'max':
+            return global_max_pool(x, batch)
+        else:
+            raise ValueError(f"Unsupported pool type: {self.pool_type}. Valid options are 'add', 'mean', or 'max'.")
+            
     
     def __repr__(self):
         layers = ''
         for i in range(self.num_layers):
             layers += str(self.layers[i]) + '\n'
+        layers += f'Pooling: {self.pool_type}' + '\n'
         layers += str(self.classifier) + '\n'
         layers += str(self.output) + '\n'
         return layers

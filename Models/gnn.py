@@ -1,30 +1,36 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, ModuleList
-
-from torch_geometric.nn import global_mean_pool, global_add_pool, global_max_pool
 from torch_geometric.utils import to_dense_adj
-
 from .base_gnn import BaseModel
 
 
 class VanillaGNNLayer(torch.nn.Module):
     def __init__(self, dim_in, dim_out):
         super().__init__()
+        self.dim_in = dim_in
+        self.dim_out = dim_out
         self.linear = Linear(dim_in, dim_out, bias=False)
 
     def forward(self, x, edge_index, edge_weight=None):
-        x = self.linear(x)
+        x = self.linear(x) # X*W.T
         adjacency = to_dense_adj(edge_index=edge_index, edge_attr=edge_weight)[0]
-        adjacency += torch.eye(len(adjacency)).to(edge_index.device) # add self-loop
-        x = torch.sparse.mm(adjacency, x)
+        # add self-loop
+        adjacency += torch.eye(len(adjacency)).to(edge_index.device) # A_hat 
+        
+        # A_hat.T*X*W.T
+        x = adjacency.T @ x
+        
         return x
+    
+    def __str__(self):
+        return f"VanillaGNNLayer(dim_in={self.dim_in}, dim_out={self.dim_out})"
     
     
 class VanillaGNN(BaseModel):
-    """Vanilla Graph Neural Network"""
-    def __init__(self, dim_in, dim_h, num_layers, dropout=False):
-        super().__init__(num_layers, dropout)
+    """Vanilla GNN"""
+    def __init__(self, dim_in, dim_h, num_layers, dropout=False, pool_type='add'):
+        super().__init__(num_layers, dropout, pool_type)
         
         for i in range(self.num_layers):
             if i == 0:
@@ -45,7 +51,7 @@ class VanillaGNN(BaseModel):
                 x = F.dropout(x, p=0.5, training=self.training)
         
         # Graph-level readout
-        x = global_add_pool(x, batch) #global_add_pool, global_max_pool
+        x = self.pool(x, batch) 
         
         # Classifier
         x = self.classifier(x)

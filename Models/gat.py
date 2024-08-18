@@ -1,41 +1,14 @@
-import os
-import sys
-import copy
-import random
-
-from pathlib import Path
-
-import numpy as np
-import pandas as pd
-
-import networkx as nx
-
-from sklearn.utils import shuffle
-
-from sklearn.model_selection import train_test_split
-
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, ModuleList, Sequential, BatchNorm1d, ReLU, Dropout, Sigmoid
-
-from torch_geometric.data import InMemoryDataset, Data
-from torch_geometric.loader import DataLoader
-from torch_geometric.io import fs
-
-from torch_geometric.nn import GCNConv, GINConv, GATv2Conv, GraphConv
-from torch_geometric.nn import global_mean_pool, global_add_pool, global_max_pool
-
-from scipy.sparse import coo_matrix
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-
+from torch.nn import Linear, ModuleList
+from torch_geometric.nn import GATv2Conv
 from .base_gnn import BaseModel
+
 
 class GAT(BaseModel):
     """GAT"""
-    def __init__(self, dim_in, dim_h, num_layers, dropout=False, num_heads=1):
-        super().__init__(num_layers, dropout)
+    def __init__(self, dim_in, dim_h, num_layers, dropout=False, pool_type='add', num_heads=1):
+        super().__init__(num_layers, dropout, pool_type)
         num_heads = 3
         print(self.num_layers)
         for i in range(self.num_layers):
@@ -56,13 +29,13 @@ class GAT(BaseModel):
     def forward(self, x, edge_index, edge_weight, batch):
         # Node embeddings 
         for i in range(self.num_layers):
-            x = self.layers[i](x, edge_index)#, edge_weight)
+            x = self.layers[i](x, edge_index)
             x = torch.relu(x)
             if self.dropout:
                 x = F.dropout(x, p=0.5, training=self.training)
         
         # Graph-level readout
-        x = global_add_pool(x, batch) #global_add_pool, global_max_pool
+        x = self.pool(x, batch)
         
          # Classifier
         x = self.classifier(x)
