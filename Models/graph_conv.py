@@ -20,7 +20,6 @@ class GCONV(BaseModel):
         self.classifier = Linear(dim_h, dim_h)
         self.output = Linear(dim_h, 1)
 
-
     def forward(self, x, edge_index, edge_weight, batch):
         # Node embeddings 
         for i in range(self.num_layers):

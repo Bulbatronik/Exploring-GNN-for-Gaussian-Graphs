@@ -1,9 +1,9 @@
 import torch
 from torch_geometric.nn import global_mean_pool, global_add_pool, global_max_pool
-from .utils import accuracy
+from .evaluation import accuracy
+
 
 class BaseModel(torch.nn.Module):
-    """Multilayer Perceptron"""
     def __init__(self, num_layers, dropout, pool_type):
         super().__init__()
         
@@ -16,7 +16,10 @@ class BaseModel(torch.nn.Module):
         criterion = torch.nn.BCELoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=0.0001) # weight_decay=5e-4)
 
-
+        # store the results
+        history = {'train_loss': [], 'train_acc': [], 
+                 'val_loss': [], 'val_acc': []}
+        
         self.train()
         for epoch in range(epochs+1):
             train_loss, train_acc = 0.0, 0.0
@@ -28,16 +31,24 @@ class BaseModel(torch.nn.Module):
                 
                 train_loss += loss / len(train_loader)
                 train_acc += accuracy(out_train>=0.5, data.y) / len(train_loader)
+                val_loss, val_acc = self.test(val_loader)
                 
                 loss.backward()
                 optimizer.step()
 
+            # Store the results in the dictionary
+            history['train_loss'].append(train_loss.item())
+            history['train_acc'].append(train_acc.item())
+            history['val_loss'].append(val_loss.item())
+            history['val_acc'].append(val_acc.item())
+                
             if(epoch % 20 == 0) and verbose:
                 val_loss, val_acc = self.test(val_loader)
                 print(f'Epoch {epoch:>3} | Train Loss: {train_loss:.3f} | Train Acc:'
                     f' {train_acc*100:>5.2f}% | Val Loss: {val_loss:.2f} | '
                     f'Val Acc: {val_acc*100:.2f}%')
-
+        return history
+    
     @torch.no_grad()      
     def test(self, loader):
         criterion = torch.nn.BCELoss()
@@ -49,7 +60,6 @@ class BaseModel(torch.nn.Module):
             acc += accuracy(out>=0.5, data.y) / len(loader)
         return loss, acc
     
-
     def pool(self, x, batch):
         if self.pool_type == 'add':
             return global_add_pool(x, batch)
@@ -59,7 +69,6 @@ class BaseModel(torch.nn.Module):
             return global_max_pool(x, batch)
         else:
             raise ValueError(f"Unsupported pool type: {self.pool_type}. Valid options are 'add', 'mean', or 'max'.")
-            
     
     def __repr__(self):
         layers = ''

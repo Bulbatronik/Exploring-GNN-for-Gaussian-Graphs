@@ -24,7 +24,6 @@ class GIN(BaseModel):
         self.classifier = Linear(self.num_layers*dim_h, self.num_layers*dim_h)
         self.output = Linear(self.num_layers*dim_h, 1)
 
-
     def forward(self, x, edge_index, edge_weight, batch):
         # Node embeddings 
         h = []

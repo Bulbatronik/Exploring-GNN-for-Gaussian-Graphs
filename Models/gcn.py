@@ -49,7 +49,6 @@ class GCN(BaseModel):
     
     
 ####################### VanillaGCN #####################
-
 class VanillaGNNLayer(torch.nn.Module):
     def __init__(self, dim_in, dim_out):
         super().__init__()
@@ -58,24 +57,18 @@ class VanillaGNNLayer(torch.nn.Module):
         self.linear = Linear(dim_in, dim_out, bias=False)
 
     def forward(self, x, edge_index, edge_weight=None):
+        # H = D_hat^-1*A_hat.T*D_hat^-1*X*W.T 
         x = self.linear(x) # X*W.T
-        adjacency = to_dense_adj(edge_index=edge_index, edge_attr=edge_weight)[0]
-        # Calculate the degree of each node by summing the weights
-        degree = torch.sum(adjacency, dim=1).float()
-        # Create the degree matrix (diagonal matrix with degrees on the diagonal)
-        degree_matrix = torch.diag(degree)
-        # add self-loop
-        adjacency += torch.eye(len(adjacency)).to(edge_index.device) # A_hat
-        degree_matrix += torch.eye(len(degree_matrix)).to(edge_index.device) # D_hat
-        # inverse and take a sqrt
-        degree_matrix = torch.sqrt( torch.inverse(degree_matrix))
         
-        # D_hat^-1*A_hat.T*D_hat^-1*X*W.T 
-        x = degree_matrix @ x
-        x = adjacency.T @ x
-        x = degree_matrix @ x
+        A = to_dense_adj(edge_index=edge_index, edge_attr=edge_weight)[0] 
+        Atilde = A + torch.eye(A.shape[0]).to(edge_index.device)
         
-        return x
-    
+        Dtilde = torch.diag(1 / torch.sqrt(torch.sum(Atilde, dim=0))).to(edge_index.device)
+        adj_norm = Dtilde @ Atilde.T @ Dtilde
+        
+        x = adj_norm @ x
+        
+        return x 
+        
     def __str__(self):
         return f"VanillaGCNLayer(dim_in={self.dim_in}, dim_out={self.dim_out})"

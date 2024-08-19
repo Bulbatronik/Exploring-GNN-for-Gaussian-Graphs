@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-
 
 def histogram_classes(positive, negative, metric, ax, **kwargs):
     """
@@ -17,7 +15,6 @@ def histogram_classes(positive, negative, metric, ax, **kwargs):
      """
     # Plot the histogram for positive and negative degrees
     sns.set(style="whitegrid")
-    plt.figure(figsize=(5, 5))
     sns.histplot(positive, color="skyblue", label="Positive", ax=ax, **kwargs)
     sns.histplot(negative, color="salmon", label="Negative", ax=ax, **kwargs)
     ax.set_title(f"Average {metric}")
@@ -25,6 +22,7 @@ def histogram_classes(positive, negative, metric, ax, **kwargs):
     ax.set_ylabel("Frequency")
     ax.grid(linestyle=':')
     ax.legend()
+    return ax
 
 
 def feature_bar_plots(x_pos, x_neg, save_path=None):
@@ -80,7 +78,7 @@ def violin_plots(data_, save_path=None):
     plt.xticks(rotation=45)
     plt.ylim([-11, 11])
     if save_path is not None:
-        plt.savefig(save_path)
+        plt.savefig(save_path)#,transparent=True)
     plt.show()
     
     
@@ -98,6 +96,7 @@ def corr_mtrx(corr, save_path=None):
     cmap = sns.diverging_palette(230, 20, as_cmap=True)
     sns.heatmap(corr, mask=mask, vmax=.3, center=0, cmap='mako',
                 square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    plt.title('Pearson correlation between features')
     if save_path is not None:
         plt.savefig(save_path)
     plt.show()

@@ -13,13 +13,13 @@ class VanillaGNNLayer(torch.nn.Module):
         self.linear = Linear(dim_in, dim_out, bias=False)
 
     def forward(self, x, edge_index, edge_weight=None):
+        # H = A_hat.T*X*W.T
         x = self.linear(x) # X*W.T
-        adjacency = to_dense_adj(edge_index=edge_index, edge_attr=edge_weight)[0]
-        # add self-loop
-        adjacency += torch.eye(len(adjacency)).to(edge_index.device) # A_hat 
         
-        # A_hat.T*X*W.T
-        x = adjacency.T @ x
+        A = to_dense_adj(edge_index=edge_index, edge_attr=edge_weight)[0]
+        Atilde = A + torch.eye(A.shape[0]).to(edge_index.device)
+        
+        x = Atilde.T @ x
         
         return x
     

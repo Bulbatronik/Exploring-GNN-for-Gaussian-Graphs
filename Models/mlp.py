@@ -1,8 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch.nn import Linear, ModuleList
-
-from .utils import accuracy
+from .evaluation import accuracy
 
 
 # Create MLP mode
@@ -48,6 +47,10 @@ class MLP(torch.nn.Module):
         criterion = torch.nn.BCELoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=0.0001) # weight_decay=5e-4)
 
+        # store the results
+        history = {'train_loss': [], 'train_acc': [], 
+                 'val_loss': [], 'val_acc': []}
+        
         self.train()
         for epoch in range(epochs+1):
             train_loss, train_acc = 0.0, 0.0
@@ -59,15 +62,23 @@ class MLP(torch.nn.Module):
                 
                 train_loss += loss / len(train_loader)
                 train_acc += accuracy(out_train>=0.5, y_batch) / len(train_loader)
-                
+                val_loss, val_acc = self.test(val_loader)
+                    
                 loss.backward()
                 optimizer.step()
-
+            
+            # Store the results in the dictionary
+            history['train_loss'].append(train_loss.item())
+            history['train_acc'].append(train_acc.item())
+            history['val_loss'].append(val_loss.item())
+            history['val_acc'].append(val_acc.item())
+            
             if(epoch % 20 == 0) and verbose:
                 val_loss, val_acc = self.test(val_loader)
                 print(f'Epoch {epoch:>3} | Train Loss: {train_loss:.3f} | Train Acc:'
                     f' {train_acc*100:>5.2f}% | Val Loss: {val_loss:.2f} | '
                     f'Val Acc: {val_acc*100:.2f}%')
+        return history
 
     @torch.no_grad()      
     def test(self, loader):
@@ -79,11 +90,3 @@ class MLP(torch.nn.Module):
             loss += criterion(out, y_batch) / len(loader)
             acc += accuracy(out>=0.5, y_batch) / len(loader)
         return loss, acc
-    
-    #def __repr__(self):
-    #    layers = ''
-    #    for i in range(self.num_layers):
-    ##        layers += str(self.layers[i]) + '\n'
-     #   layers += str(self.classifier) + '\n'
-     #   layers += str(self.output) + '\n'
-     #   return layers

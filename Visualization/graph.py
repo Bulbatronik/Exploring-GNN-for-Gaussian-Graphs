@@ -36,7 +36,7 @@ def vis_graph(A: np.array,
                     )
     plt.title(f'{label} class')
     if save_path:
-        plt.savefig(save_path)
+        plt.savefig(save_path, transparent=True)
     plt.show()
     
 def plot_graphs(A: np.array,
@@ -88,5 +88,5 @@ def plot_graphs(A: np.array,
                         edge_color=[G[u][v]['weight'] for u, v in G.edges]                       
                         )
     if save_path:
-        plt.savefig(save_path, dpi=1000)
+        plt.savefig(save_path, dpi=1000, transparent=True)
     plt.show()
