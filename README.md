@@ -1,4 +1,4 @@
-# Graph Neural Networks for Graph Classification
+# Graph Neural Networks for Gaussian Graphs Classification
 
 ## :dart: Objective ##
 
