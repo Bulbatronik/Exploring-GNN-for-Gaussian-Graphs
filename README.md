@@ -11,7 +11,7 @@ Install the necessary required dependencies
 pip install -r requirements.txt
 ```
 
-## Dataset
+## :checkered_flag: Dataset
 The data used for simulation are two synthetic datasets simulated using [`Gaussian graph model`](https://arxiv.org/pdf/1707.04345) for *balanced* and *unbalanced* cases (credits to [Alessia Mapelli](https://humantechnopole.it/it/people/alessia-mapelli/)). Each case consists of *500* undirected graphs with *20* nodes. Each of the `.RData` files is structured the following way:
 - **Adj_matrices**: Contains the weighted adjacency matrix for each sample.
 - **Sim_data1**: Contains the node observations and graph class for each sample.
