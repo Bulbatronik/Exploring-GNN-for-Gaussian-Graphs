@@ -1,9 +1,10 @@
 # Graph Neural Networks for Graph Classification.
 
-## Objective
+## :dart: Objective ##
+
 The goal of the project is to implement a GNN for graph classification in unbalanced settings that consider edge weights, utilizing attention mechanisms and other techniques to improve the interpretability of the predictions.
 
-## Usage
+## :checkered_flag: Usage ##
 
 Install the necessary required dependencies
 ```bash
@@ -16,14 +17,14 @@ The data used for simulation are two synthetic datasets simulated using [`Gaussi
 - **Sim_data1**: Contains the node observations and graph class for each sample.
  
 
-## Pipeline
+## :rocket: Pipeline
 
 - **Exploratory Data Analysis (EDA)**: the step involves investigation of the dataset focusing on the node statistics and features, edge statistics and weights distribution and general topology analysis. 
 - **Data Preprocessing**: this step we implement scaling of the node features and weights of the adjacency matrices. In addition, we implement additional features extracted from the encoding of the node identifier and embeddings provided by `Node2Vec`.
 - **Model Training**: we implement training of various GNN models, including `GCN`, `GAT`, `GraphConv` and `GIN`, including the implementation of some of them from scratch. We also tran `MLP` to compare the graph models with a topology-agnostic model.
 - **Explainability (XAI)**: using `Graph Neural Network Explainer (GNNE)` and `Integrated Gradients (IG)`, we visualize the most influential nodes and edges to the final performance of the model.
 
-## Results
+## :memo: Results
 The main reults are provided in the [Presentation.pdf](Presentation.pdf) file. 
 
 
