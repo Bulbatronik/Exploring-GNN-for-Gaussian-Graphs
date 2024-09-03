@@ -7,7 +7,6 @@ def accuracy(y_pred, y_true):
     return torch.sum(y_pred == y_true) / len(y_true)
 
 
-
 def test_n_times(model_, train_loader, val_loader, test_loader, epochs, N_sim, verbose=True):
     """Test the model N_times and return the average accuracy."""
     history_avg = {'train_loss': np.zeros(epochs+1), 'train_acc': np.zeros(epochs+1), 

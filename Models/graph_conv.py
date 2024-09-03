@@ -34,8 +34,8 @@ class GCONV(BaseModel):
         # Classifier
         x = self.classifier(x)
         if self.dropout:
-                x = F.dropout(x, p=0.5, training=self.training)
-        x = self.classifier(x)
+            x = F.dropout(x, p=0.5, training=self.training)
+        x = torch.relu(x)
         x = self.output(x)
         
         return torch.sigmoid(x)
