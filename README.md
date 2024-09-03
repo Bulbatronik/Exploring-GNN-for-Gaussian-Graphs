@@ -1,12 +1,12 @@
-# Graph Neural Networks for Graph Classification.
+# Graph Neural Networks for Graph Classification
 
 ## :dart: Objective ##
 
-The goal of the project is to implement a GNN for graph classification in unbalanced settings that consider edge weights, utilizing attention mechanisms and other techniques to improve the interpretability of the predictions.
+The project's goal is to implement Graph Neural Networks (GNN) for graph classification in unbalanced settings that consider edge weights, utilizing attention mechanisms and other techniques to improve the interpretability of the predictions.
 
 ## :checkered_flag: Usage ##
 
-Install the necessary required dependencies
+Install the necessary dependencies
 ```bash
 pip install -r requirements.txt
 ```
